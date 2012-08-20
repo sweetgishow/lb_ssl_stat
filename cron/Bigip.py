@@ -127,7 +127,7 @@ class Bigip():
                             #self.link_profile_to_virtual[profile_name].append(virtual_name)
                             self.link_virtual_to_profile[virtual_name].append(profile_name)
                     
-    def search(self, ip = None, port = None, scope = "all"):    #search whatever, return the virtual in the structure
+    def search(self, ip = None, port = None, scope = "all"):    #search whatever, return the top level(virtual) that the searched searched string belongs to
         if port == "443":   #silly F5 doing port translation in config file
             port = "https"
         if scope == "all":
@@ -143,32 +143,32 @@ class Bigip():
         matched_unique = []
         if search_vip == True:
             for virtual_name in self.virtual:
-                if ((self.virtual[virtual_name]["vip"] == ip or ip == None) and (self.virtual[virtual_name]["port"] == port or port == None)):
-                    matched.append([virtual_name, self.virtual[virtual_name]["vip"], self.virtual[virtual_name]["port"], "virtual"])
-        if search_node == True:
+                if ((self.virtual[virtual_name]["vip"] == ip or ip == None) and (self.virtual[virtual_name]["port"] == port or port == None)):  #if the ip is 'None', then all ips will be matched, same as port
+                    matched.append({'name': virtual_name, 'address': self.virtual[virtual_name]["vip"], 'port': self.virtual[virtual_name]["port"], 'type': "virtual"})
+        if search_node == True: #if it's a node, then return all the virtuals that this node belongs to
             if ip in self.link_member_to_pool:
                 if port in self.link_member_to_pool[ip]:
                     for pool in self.link_member_pool[ip][port]:
                         for virtual in self.link_pool_to_virtual[pool]:
-                            matched.append([virtual, self.virtual[virtual]["vip"], self.virtual[virtual]["port"], "virtual"])
-                if port == None:
+                            matched.append({'name': virtual, 'address': self.virtual[virtual]["vip"], 'port': self.virtual[virtual]["port"], 'type': "virtual"})
+                if port == None:    #if port is None, then all ports are matched
                     for port in self.link_member_to_pool[ip]:
                         for pool in self.link_member_to_pool[ip][port]:
                             for virtual in self.link_pool_to_virtual[pool]:
-                                matched.append([virtual, self.virtual[virtual_name]["vip"], self.virtual[virtual_name]["port"], "virtual"])
+                                matched.append({'name': virtual, 'address': self.virtual[virtual_name]["vip"], 'port': self.virtual[virtual_name]["port"], 'type': "virtual"})
             if ip == None:
                 for ip in self.link_member_to_pool:
                     if port in self.link_member_to_pool[ip]:
                         for pool in self.link_member_to_pool[ip][port]:
                             for virtual in self.link_pool_to_virtual[pool]:
-                                matched.append([virtual, self.virtual[virtual]["vip"], self.virtual[virtual]["port"], "virtual"])
+                                matched.append({'name': virtual, 'address': self.virtual[virtual]["vip"], 'port': self.virtual[virtual]["port"], 'type': "virtual"})
                     if port == None:
                         for port in self.link_member_to_pool[ip]:
                             for pool in self.link_member_to_pool[ip][port]:
                                 for virtual in self.link_pool_to_virtual[pool]:
-                                    matched.append([virtual, self.virtual[virtual]["vip"], self.virtual[virtual]["port"], "virtual"])
+                                    matched.append({'name': virtual, 'address': self.virtual[virtual]["vip"], 'port': self.virtual[virtual]["port"], 'type': "virtual"})
         for i in matched:
-            if not i in matched_unique:
+            if not i in matched_unique: #remove duplex virtuals in matched
                 matched_unique.append(i)
         return matched_unique
     def search_https_vip(self):
@@ -176,7 +176,7 @@ class Bigip():
         search = self.search(None, "443", "vip")
         #print self.sslprofile
         for i in search:
-            if self.link_virtual_to_profile[i[0]] != []:
+            if self.link_virtual_to_profile[i['name']] != []:   #sometimes even the LB has 443 vips, the cert is not on LB but on the server side, which means LB does not do any ssl offload, and those kind of vips will be ignored
                 https_vip.append(i)
         return https_vip
         

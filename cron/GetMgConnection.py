@@ -4,19 +4,18 @@ import requests
 import re
 
 class GetMgConnection():
-    def __init__(self, lbtype, lbname, vip, timerange):
+    def __init__(self, lbtype, lbname, vip_name, vip_address, timerange):
         self.average_connection = ""
         self.max_connection = ""
         if lbtype == "netscaler":
-            virtualname = vip[0].replace(":", ".")    #multigraph does this
+            virtualname = vip_name.replace(":", ".")    #multigraph does this
             url = "http://mg.vip.ebay.com/?target=%2F" + lbtype + "%2F" + lbname + "%2Fvirtualservers%2F" + virtualname + "%2F" + virtualname + ";view=Connections;ranges=" + timerange
             pattern = ".*open client connections</font></TD><TD align=right>(.*?) connections</TD><TD align=right>(.*?) connections</TD><TD align=right>(.*?) connections</TD>"
         if lbtype == "bigip":
-            #url = "http://mg.vip.smf.ebay.com/?target=%2F" + lbtype + "%2F" + lbname + "%2Fvirtualserver%2F" + virtualname + ";view=Connections;ranges=" + timerange
-            #pattern = ".*ltmvirtualservstatclientcurconns</font></TD><TD align=right>(.*?) </TD><TD align=right>(.*?) </TD><TD align=right>(.*?) </TD>"
-            url = "http://mg.vip.smf.ebay.com/?target=%2F" + lbtype + "%2F" + lbname + "%2Fvirtualaddress%2F" + vip[1] + ";view=Connections;ranges=" + timerange
-            url_ext = "http://mg.vip.smf.ebay.com/?target=%2F" + lbtype + "%2F" + lbname.replace(".", "-ext.", 1) + "%2Fvirtualaddress%2F" + vip[1] + ";view=Connections;ranges=" + timerange
-            url_int = "http://mg.vip.smf.ebay.com/?target=%2F" + lbtype + "%2F" + lbname.replace(".", "-int.", 1) + "%2Fvirtualaddress%2F" + vip[1] + ";view=Connections;ranges=" + timerange
+            #in multigraph there are 3 kind of possibities for the name of an bigip like sjclb123: sjclb123.sjc.ebay.com, sjclb123-int.sjc.ebay.com, sjclb123-ext.sjc.ebay.com
+            url = "http://mg.vip.smf.ebay.com/?target=%2F" + lbtype + "%2F" + lbname + "%2Fvirtualaddress%2F" + vip_address + ";view=Connections;ranges=" + timerange
+            url_ext = "http://mg.vip.smf.ebay.com/?target=%2F" + lbtype + "%2F" + lbname.replace(".", "-ext.", 1) + "%2Fvirtualaddress%2F" + vip_address + ";view=Connections;ranges=" + timerange
+            url_int = "http://mg.vip.smf.ebay.com/?target=%2F" + lbtype + "%2F" + lbname.replace(".", "-int.", 1) + "%2Fvirtualaddress%2F" + vip_address + ";view=Connections;ranges=" + timerange
             pattern = ".*ltmvirtualaddrstatclientcurconns</font></TD><TD align=right>(.*?) </TD><TD align=right>(.*?) </TD><TD align=right>(.*?) </TD>"
         html = requests.get(url)
         text = html.text.replace("\n", "")

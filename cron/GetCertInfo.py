@@ -4,7 +4,7 @@ import OpenSSL
 import socket
 import datetime
 
-class GetCertInfo():
+class GetCertInfo():    #do an handshake with the ssl address and get it's cert info
     def __init__(self, address, port = 443):
         self.address = address
         self.port = port

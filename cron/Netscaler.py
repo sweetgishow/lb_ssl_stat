@@ -93,7 +93,7 @@ class Netscaler():
             if (re_match is not None):
                 self.link_sslv[re_match.group(1)] = ""
 
-    def search(self, ip = None, port = None, scope = "all"): #search any IP and/or port that are configured on the netscaler, return the vip&port of the csv/lbv(even when a server is searched, the csv/lbv will be returned)
+    def search(self, ip = None, port = None, scope = "all"): #search any IP and/or port that are configured on the netscaler, return the top level(lbv/csv) (even when a server is searched, the csv/lbv will be returned)
         if scope == "all":
             search_vip = True
             search_server = True
@@ -109,14 +109,14 @@ class Netscaler():
         if search_vip == True:
             for csv_name in self.csv:   #search in csv
                 if ((self.csv[csv_name]["vip"] == ip or ip == None) and (self.csv[csv_name]["port"] == port or port == None)):
-                    matched.append([csv_name, self.csv[csv_name]["vip"], self.csv[csv_name]["port"], "csv"])
+                    matched.append({'name': csv_name, 'address': self.csv[csv_name]["vip"], 'port': self.csv[csv_name]["port"], 'type': "csv"})
             for lbv_name in self.lbv:   #search in lbv
                 if ((self.lbv[lbv_name]["vip"] == ip or ip == None) and (self.lbv[lbv_name]["port"] == port or port == None)):
                     if self.link_lbv_to_csv[lbv_name] != []:    #if the lbv is linked to csv, then retreive the csv
                         for csv_name in self.link_lbv_to_csv[lbv_name]:
-                            matched.append([csv_name, self.csv[csv_name]["vip"], self.csv[csv_name]["port"], "csv"])
+                            matched.append({'name': csv_name, 'addess': self.csv[csv_name]["vip"], 'port': self.csv[csv_name]["port"], 'type': "csv"})
                     else:
-                        matched.append([lbv_name, self.lbv[lbv_name]["vip"], self.lbv[lbv_name]["port"], "lbv"])
+                        matched.append({'name': lbv_name, 'address': self.lbv[lbv_name]["vip"], 'port': self.lbv[lbv_name]["port"], 'type': "lbv"})
         if search_server == True:
             for service_name in self.service:   #search in server
                 if ((self.server[self.service[service_name]["server_name"]] == ip or ip == None) and (self.service[service_name]["port"] == port or port == None)):
@@ -124,9 +124,9 @@ class Netscaler():
                         for lbv_name in self.link_service_to_lbv[service_name]:
                             if lbv_name in self.link_lbv_to_csv:
                                 for csv_name in self.link_lbv_to_csv[lbv_name]:
-                                    matched.append([csv_name, self.csv[csv_name]["vip"], self.csv[csv_name]["port"], "csv"])
+                                    matched.append({'name': csv_name, 'address': self.csv[csv_name]["vip"], 'port': self.csv[csv_name]["port"], 'type': "csv"})
                             else:
-                                matched.append([lbv_name, self.lbv[lbv_name]["vip"], self.lbv[lbv_name]["port"], "lbv"])
+                                matched.append({'name': lbv_name, 'address': self.lbv[lbv_name]["vip"], 'port': self.lbv[lbv_name]["port"], 'type': "lbv"})
         for i in matched:
             if not i in matched_unique:
                 matched_unique.append(i)
@@ -136,7 +136,7 @@ class Netscaler():
         https_vip = []
         search = self.search(None, "443", "vip")
         for i in search:
-            if i[0] in self.link_sslv:  #ssl offload could be on the server side, not on lb, and those vips are ignored
+            if i['name'] in self.link_sslv:  #ssl offload could be on the server side, not on lb, and those vips are ignored
                 https_vip.append(i)
         return https_vip
 

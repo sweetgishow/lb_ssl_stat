@@ -4,5 +4,6 @@ from django.conf.urls.defaults import *
 from mysite.lb_ssl_stat.views import *
 
 urlpatterns = patterns('',
-    url(r'^$', summary),
+    url(r'^(?P<timerange>.*)$', summary),
+    #url(r'^$', summary),
 )

@@ -13,7 +13,7 @@ from MultithreadRun import multithreadrun
 
 from pprint import pprint
 
-class LbSslStat():
+class GetLBAndCertInfo():
     def __init__(self):
         self.data = {"name": "", "lbtype": "", "model": "", "os": "", "ssl": []}
         self.name = ""
@@ -21,7 +21,7 @@ class LbSslStat():
         self.model = ""
         self.os = ""
         self.ssl = []
-    def run_all(self, conf_file, timerange = 'w'):
+    def run_all(self, conf_file):
         re_match = re.match(".*ns.conf$", conf_file)
         if re_match is not None:
             lb = Netscaler()
@@ -45,13 +45,14 @@ class LbSslStat():
                 bit  = "-"
                 not_after = "-"
                 days_to_expire = "-"
-            try:    
-                connection = GetMgConnection(self.data["lbtype"], self.data["name"], vip['name'], vip['address'], timerange)
-                max_conn = connection.max_connection
-                avg_conn = connection.average_connection
-            except:
-                max_conn = "-"
-                avg_conn = "-"
+
+#            try:    
+#                connection = GetMgConnection(self.data["lbtype"], self.data["name"], vip, "w")
+#                max_conn = connection.max_connection
+#                avg_conn = connection.average_connection
+#            except:
+            max_conn = "-"  #those will be updated by another script that runs like every 30 mins, not daily
+            avg_conn = "-"
             ssl_info = {"vip_name": vip['name'], "vip_address": vip['address'], "bit": bit, "cert_expiration_date": not_after, "days_to_expire": days_to_expire, "average_connection": avg_conn, "max_connection": max_conn}
             ssl.append(ssl_info)
         self.data["ssl"] = ssl
@@ -77,12 +78,12 @@ def main():
     alllbsslstat = []
     arg = []
     for i in (glob("/var/tmp/current/*.ns.conf") + glob("/var/tmp/current/*.bigip.conf")):
-        lbsslstat = LbSslStat()
+        lbsslstat = GetLBAndCertInfo()
         alllbsslstat.append(lbsslstat)
         arg.append((lbsslstat, i))
         
-    a  = LbSslStat()
-    multithreadrun(childthread, arg, 30)
+    #a  = GetLBAndCertInfo()
+    multithreadrun(childthread, arg, 40)
     
     alldata = []
     for i in alllbsslstat:
